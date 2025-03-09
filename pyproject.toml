@@ -1,0 +1,26 @@
+[project]
+name = "junior-product-manager"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Your Name",email = "you@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13,<4"
+dependencies = [
+    "openai (>=1.65.4,<2.0.0)",
+    "requests (>=2.32.3,<3.0.0)",
+    "numpy (>=2.2.3,<3.0.0)",
+    "python-dotenv (>=1.0.1,<2.0.0)",
+    "streamlit (>=1.43.1,<2.0.0)",
+    "notion-client (>=2.3.0,<3.0.0)",
+    "chromadb (>=0.6.3,<0.7.0)",
+    "langchain (>=0.3.20,<0.4.0)",
+    "langchain-openai (>=0.3.8,<0.4.0)",
+    "langchain-community (>=0.3.19,<0.4.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
