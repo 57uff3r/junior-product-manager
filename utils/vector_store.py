@@ -27,9 +27,6 @@ class VectorStore:
         self.db = Chroma(
             persist_directory=persist_directory,
             embedding_function=self.embeddings,
-            client_settings=chromadb.Settings(
-                allow_reset=True
-            )
         )
 
     def add_texts(self, texts: Dict[str, str]) -> None:
@@ -66,9 +63,6 @@ class VectorStore:
         self.db = Chroma(
             persist_directory=self.persist_directory,
             embedding_function=self.embeddings,
-            client_settings=chromadb.Settings(
-                allow_reset=True
-            )
         )
         self.db.persist()
-        logger.info("Vector store cleared") 
+        logger.info("Vector store cleared")
