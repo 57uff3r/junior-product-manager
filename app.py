@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
+import sentry_sdk
 
 from ingest import ingest_data
 from utils.vector_store import VectorStore
@@ -18,6 +19,24 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
+
+sentry_dsn = os.getenv("SENTRY_DSN")
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring
+        traces_sample_rate=1.0,
+        # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions
+        profiles_sample_rate=1.0,
+        # Enable performance monitoring
+        enable_tracing=True,
+        # Add Streamlit integration
+        integrations=[],
+        # Add environment name
+        environment=os.getenv("SENTRY_ENV", "development"),
+    )
+    # Log that Sentry was initialized
+    logging.info("Sentry initialized for error tracking")
 
 # Get configuration from environment variables
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -81,28 +100,32 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # Chat input
+# Chat input
 if prompt := st.chat_input("Ask a question about your knowledge base..."):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
+
     # Display user message
     with st.chat_message("user"):
         st.markdown(prompt)
-    
-    # Display assistant response
-    with st.chat_message("assistant"):
-        message_placeholder = st.empty()
 
     # Check if this is a data import request
     if prompt.lower() in ["update knowledge base"]:
-        # Display assistant response
+        # Create a single assistant message placeholder
         with st.chat_message("assistant"):
-            st.markdown("🔄 Starting data import process. This may take a few minutes...")
+            message_placeholder = st.empty()
+            # First show the loading message
+            message_placeholder.markdown("🔄 Starting data import process. This may take a few minutes...")
 
-        results = ingest_data(clear_existing=True)
-        with st.chat_message("assistant"):
-            st.markdown(f"✅ Data import complete! Total amount of imported docs is {results['total_documents']}")
+            # Run the import
+            results = ingest_data(clear_existing=True)
 
+            # Update the same placeholder with results
+            completion_message = f"✅ Data import complete! Total amount of imported docs is {results['total_documents']}"
+            message_placeholder.markdown(completion_message)
+
+            # Add to chat history
+            st.session_state.messages.append({"role": "assistant", "content": completion_message})
     else:
         # Display assistant response for normal queries
         with st.chat_message("assistant"):
@@ -129,7 +152,6 @@ if prompt := st.chat_input("Ask a question about your knowledge base..."):
 
                 # Add error message to chat history
                 st.session_state.messages.append({"role": "assistant", "content": error_message})
-
 
 # Sidebar with information
 with st.sidebar:
