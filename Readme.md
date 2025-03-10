@@ -52,7 +52,7 @@ AI junior product manager relies on the following technologies:
 
 * **chromadb** - a database for storing and retrieving information from data sources. It supports Embeddings, vector search 
 which is crucial for all LLM based systems.
-* **langchaingpt** - a state-of-the-art toolkit for build LLM-based applications.
+* **langchain** - a state-of-the-art toolkit for build LLM-based applications.
 * **streamlit** - a Python library for building interactive web applications.
 
 ## Support and maintenance

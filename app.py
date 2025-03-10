@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
+
+from ingest import ingest_data
 from utils.vector_store import VectorStore
 
 # Configure logging
@@ -70,7 +72,7 @@ if "conversation" not in st.session_state:
 # App title
 st.title("🐔Junior product manager")
 st.markdown("""
-Ask questions about your personal knowledge base stored in Notion and local files.
+Ask questions about the product knowledge based stored in Notion and local files.
 """)
 
 # Display chat messages
@@ -90,25 +92,44 @@ if prompt := st.chat_input("Ask a question about your knowledge base..."):
     # Display assistant response
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
-        
-        try:
-            # Get response from conversation chain
-            response = st.session_state.conversation.invoke({"question": prompt})
-            answer = response["answer"]
-            
-            # Display the response
-            message_placeholder.markdown(answer)
-            
-            # Add assistant response to chat history
-            st.session_state.messages.append({"role": "assistant", "content": answer})
-        
-        except Exception as e:
-            error_message = f"Error: {str(e)}"
-            message_placeholder.error(error_message)
-            logger.error(f"Error processing query: {e}")
-            
-            # Add error message to chat history
-            st.session_state.messages.append({"role": "assistant", "content": error_message})
+
+    # Check if this is a data import request
+    if prompt.lower() in ["update knowledge base"]:
+        # Display assistant response
+        with st.chat_message("assistant"):
+            st.markdown("🔄 Starting data import process. This may take a few minutes...")
+
+        results = ingest_data(clear_existing=True)
+        with st.chat_message("assistant"):
+            st.markdown(f"✅ Data import complete! Total amount of imported docs is {results['total_documents']}")
+
+    else:
+        # Display assistant response for normal queries
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+
+            try:
+                if st.session_state.conversation is None:
+                    answer = "Please import your data first by typing 'import data'."
+                else:
+                    # Get response from conversation chain
+                    response = st.session_state.conversation.invoke({"question": prompt})
+                    answer = response["answer"]
+
+                # Display the response
+                message_placeholder.markdown(answer)
+
+                # Add assistant response to chat history
+                st.session_state.messages.append({"role": "assistant", "content": answer})
+
+            except Exception as e:
+                error_message = f"Error: {str(e)}"
+                message_placeholder.error(error_message)
+                logger.error(f"Error processing query: {e}")
+
+                # Add error message to chat history
+                st.session_state.messages.append({"role": "assistant", "content": error_message})
+
 
 # Sidebar with information
 with st.sidebar:
@@ -120,7 +141,8 @@ with st.sidebar:
     - Notion pages
     - Plain text files stored in local folder
     
-    To update the knowledge base, run the `ingest.py` script.
+    To update the knowledge base, run the `ingest.py` script or
+    text `update knowledge base` in the chat.
     
     Got questions? Ask Andrei!
     [Linkedin](https://www.linkedin.com/in/a-korchak/)
